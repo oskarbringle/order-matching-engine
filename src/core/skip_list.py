@@ -7,11 +7,12 @@ class SkipListNode:
         self.forward = [None] * (level + 1)
 
 class SkipList:
-    MAX_LEVEL = 4  
+    MAX_LEVEL = 4
 
-    def __init__(self):
-        self.head = SkipListNode(None, self.MAX_LEVEL)  # Sentinel node
-        self.level = 0  
+    def __init__(self, ascending=True):
+        self.head = SkipListNode(None, self.MAX_LEVEL)
+        self.level = 0
+        self.ascending = ascending
 
     def random_level(self):
         lvl = 0
@@ -23,9 +24,19 @@ class SkipList:
         update = [None] * (self.MAX_LEVEL + 1)
         current = self.head
 
+        # Use ordering based on the ascending flag.
         for i in range(self.level, -1, -1):
-            while current.forward[i] and current.forward[i].order.price < order.price:
-                current = current.forward[i]
+            while current.forward[i]:
+                if self.ascending:
+                    if current.forward[i].order.price < order.price:
+                        current = current.forward[i]
+                    else:
+                        break
+                else:
+                    if current.forward[i].order.price > order.price:
+                        current = current.forward[i]
+                    else:
+                        break
             update[i] = current
 
         new_level = self.random_level()
@@ -42,10 +53,18 @@ class SkipList:
     def remove(self, price):
         update = [None] * (self.MAX_LEVEL + 1)
         current = self.head
-
         for i in range(self.level, -1, -1):
-            while current.forward[i] and current.forward[i].order.price < price:
-                current = current.forward[i]
+            while current.forward[i]:
+                if self.ascending:
+                    if current.forward[i].order.price < price:
+                        current = current.forward[i]
+                    else:
+                        break
+                else:
+                    if current.forward[i].order.price > price:
+                        current = current.forward[i]
+                    else:
+                        break
             update[i] = current
 
         target = current.forward[0]
@@ -59,31 +78,29 @@ class SkipList:
                 self.level -= 1
 
     def get_best_bid(self):
-        """
-        For BUY orders, the best bid is the highest price order.
-        Since our list is sorted in ascending order, traverse to the end.
-        """
+        # For buy orders, the list is descending, so the best bid is the first element.
+        if not self.ascending:
+            return self.head.forward[0].order if self.head.forward[0] else None
+        # Otherwise (if ascending) traverse to the end.
         current = self.head
         while current.forward[0]:
             current = current.forward[0]
-        return current.order
+        return current.order if current != self.head else None
 
     def get_best_ask(self):
-        """
-        For SELL orders, the best ask is the lowest price order.
-        That's simply the first node in the list.
-        """
-        if self.head.forward[0]:
-            return self.head.forward[0].order
-        return None
+        # For sell orders, the list is ascending, so the best ask is the first element.
+        if self.ascending:
+            return self.head.forward[0].order if self.head.forward[0] else None
+        # Otherwise (if descending) traverse to the end.
+        current = self.head
+        while current.forward[0]:
+            current = current.forward[0]
+        return current.order if current != self.head else None
 
     def to_list(self):
-        """Returns a sorted list of all items in the skip list."""
         result = []
-        current = self.head.forward[0]  # Start at the first actual element
-
+        current = self.head.forward[0]
         while current:
-            result.append((current.key, current.order))  # Adjust this based on actual node structure
+            result.append(current.order)
             current = current.forward[0]
-
         return result

@@ -3,8 +3,10 @@ from .order import Order, OrderType
 
 class OrderBook:
     def __init__(self):
-        self.buy_orders = SkipList()  
-        self.sell_orders = SkipList()  
+        # Buy orders: descending order so best bid is at the head.
+        self.buy_orders = SkipList(ascending=False)
+        # Sell orders: ascending order so best ask is at the head.
+        self.sell_orders = SkipList(ascending=True)
 
     def place_order(self, order: Order):
         if order.order_type == OrderType.BUY:
@@ -17,14 +19,15 @@ class OrderBook:
             best_bid = self.buy_orders.get_best_bid()
             best_ask = self.sell_orders.get_best_ask()
 
-            # If either side is empty, we cannot match
+            # If either side is empty, we cannot match.
             if best_bid is None or best_ask is None:
                 break
 
             # Check if match conditions are met (buy price must be >= sell price)
             if best_bid.price >= best_ask.price:
                 trade_quantity = min(best_bid.quantity, best_ask.quantity)
-                print(f"Trade Executed: {trade_quantity} units at {best_ask.price}")
+                # Optionally, reduce the logging here as well:
+                # print(f"Trade Executed: {trade_quantity} units at {best_ask.price}")
 
                 best_bid.quantity -= trade_quantity
                 best_ask.quantity -= trade_quantity
@@ -39,6 +42,4 @@ class OrderBook:
     def print_order_book(self):
         best_bid = self.buy_orders.get_best_bid()
         best_ask = self.sell_orders.get_best_ask()
-
         print(f"Best Bid: {best_bid.price if best_bid else 'None'} | Best Ask: {best_ask.price if best_ask else 'None'}")
-
